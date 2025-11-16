@@ -14,22 +14,25 @@ export default function LivePriceTracker() {
   const [prices, setPrices] = useState<PriceData[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
-  const [baseCurrency, setBaseCurrency] = useState('USD');
 
-  const trackingCurrencies = ['EUR', 'GBP', 'JPY', 'CHF', 'CAD', 'HUF'];
+  // Show live rates of these base currencies against HUF
+  const targetCurrency = 'HUF';
+  const trackedBases = ['EUR', 'USD', 'RON'];
 
   useEffect(() => {
     const fetchPrices = async () => {
       try {
         setLoading(true);
-        const response = await axios.get(
-          `https://api.exchangerate-api.com/v4/latest/${baseCurrency}`
+        // Fetch rates for each tracked base currency
+        const responses = await Promise.all(
+          trackedBases.map((base) =>
+            axios.get(`https://api.exchangerate-api.com/v4/latest/${base}`)
+          )
         );
 
-        const rates = response.data.rates;
-        const newPrices = trackingCurrencies.map((curr) => ({
-          currency: curr,
-          rate: rates[curr] || 0,
+        const newPrices: PriceData[] = responses.map((res, idx) => ({
+          currency: trackedBases[idx], // base currency (EUR, USD, RON)
+          rate: res.data.rates?.[targetCurrency] || 0,
           change: (Math.random() - 0.5) * 0.5, // Simulated change for demo
           timestamp: new Date(),
         }));
@@ -37,8 +40,8 @@ export default function LivePriceTracker() {
         setPrices(newPrices);
         setError(null);
       } catch (err) {
-        setError('Failed to load live prices');
-        console.error('Price fetch error:', err);
+        setError('Failed to load HUF rates');
+        console.error('HUF price fetch error:', err);
       } finally {
         setLoading(false);
       }
@@ -48,29 +51,16 @@ export default function LivePriceTracker() {
     const interval = setInterval(fetchPrices, 30000); // Update every 30 seconds
 
     return () => clearInterval(interval);
-  }, [baseCurrency]);
+  }, []);
 
   return (
     <div className="w-full max-w-2xl mx-auto p-6 bg-white rounded-xl shadow-xl hover:shadow-2xl transition-all duration-300">
       <div className="flex justify-between items-center mb-8 flex-wrap gap-4">
         <h2 className="text-2xl font-bold bg-gradient-to-r from-indigo-600 to-pink-600 bg-clip-text text-transparent animate-pulse">
-          📊 Live Exchange Rates
+          📊 Live HUF Exchange Rates
         </h2>
-        <div className="flex gap-2 animate-fadeIn">
-          {['USD', 'EUR', 'GBP'].map((curr, index) => (
-            <button
-              key={curr}
-              onClick={() => setBaseCurrency(curr)}
-              className={`px-4 py-2 rounded-lg font-semibold transition-all duration-300 transform hover:scale-110 active:scale-95 ${
-                baseCurrency === curr
-                  ? 'bg-gradient-to-r from-indigo-500 to-pink-500 text-white shadow-lg scale-110'
-                  : 'bg-gray-200 text-gray-700 hover:bg-gray-300 shadow-md'
-              }`}
-              style={{ animationDelay: `${index * 100}ms` }}
-            >
-              {curr}
-            </button>
-          ))}
+        <div className="text-sm text-gray-600 bg-gray-50 border border-gray-200 rounded-lg px-3 py-2">
+          Tracking: EUR→HUF, USD→HUF, RON→HUF
         </div>
       </div>
 
@@ -100,10 +90,10 @@ export default function LivePriceTracker() {
               <div className="flex justify-between items-center">
                 <div>
                   <p className="text-sm text-gray-600 font-medium">
-                    1 {baseCurrency} = {price.rate.toFixed(4)} {price.currency}
+                    1 {price.currency} = {price.rate.toFixed(4)} {targetCurrency}
                   </p>
                   <p className="text-xs text-indigo-600 font-bold mt-2 animate-pulse">
-                    {price.currency}
+                    {price.currency} → {targetCurrency}
                   </p>
                 </div>
                 <div className="text-right">
@@ -127,7 +117,7 @@ export default function LivePriceTracker() {
       )}
 
       <div className="mt-8 p-4 bg-gradient-to-r from-indigo-50 to-pink-50 rounded-xl text-xs text-gray-600 border-2 border-indigo-100 animate-fadeIn">
-        <p className="font-medium">⚡ Updates every 30 seconds • Base currency: <span className="font-bold text-indigo-600">{baseCurrency}</span></p>
+        <p className="font-medium">⚡ Updates every 30 seconds • Pairs: <span className="font-bold text-indigo-600">EUR→HUF, USD→HUF, RON→HUF</span></p>
       </div>
     </div>
   );

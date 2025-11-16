@@ -17,7 +17,7 @@ export default function CurrencyConverter() {
   const [error, setError] = useState<string | null>(null);
   const [lastUpdate, setLastUpdate] = useState<Date | null>(null);
 
-  const currencies = ['USD', 'EUR', 'GBP', 'JPY', 'AUD', 'CAD', 'CHF', 'CNY', 'INR', 'MXN', 'HUF'];
+  const currencies = ['USD', 'EUR', 'GBP', 'JPY', 'AUD', 'CAD', 'CHF', 'CNY', 'INR', 'MXN', 'HUF', 'RON'];
 
   // Fetch exchange rates from API
   const fetchExchangeRate = useCallback(async () => {
