@@ -8,8 +8,8 @@ interface ExchangeRate {
 }
 
 export default function CurrencyConverter() {
-  const [fromCurrency, setFromCurrency] = useState('USD');
-  const [toCurrency, setToCurrency] = useState('EUR');
+  const [fromCurrency, setFromCurrency] = useState('EUR');
+  const [toCurrency, setToCurrency] = useState('HUF');
   const [amount, setAmount] = useState('1');
   const [exchangeRate, setExchangeRate] = useState<number | null>(null);
   const [convertedAmount, setConvertedAmount] = useState<number | null>(null);
