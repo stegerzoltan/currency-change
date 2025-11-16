@@ -1,0 +1,134 @@
+'use client';
+
+import { useState, useEffect } from 'react';
+import axios from 'axios';
+
+interface PriceData {
+  currency: string;
+  rate: number;
+  change: number;
+  timestamp: Date;
+}
+
+export default function LivePriceTracker() {
+  const [prices, setPrices] = useState<PriceData[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
+  const [baseCurrency, setBaseCurrency] = useState('USD');
+
+  const trackingCurrencies = ['EUR', 'GBP', 'JPY', 'CHF', 'CAD', 'HUF'];
+
+  useEffect(() => {
+    const fetchPrices = async () => {
+      try {
+        setLoading(true);
+        const response = await axios.get(
+          `https://api.exchangerate-api.com/v4/latest/${baseCurrency}`
+        );
+
+        const rates = response.data.rates;
+        const newPrices = trackingCurrencies.map((curr) => ({
+          currency: curr,
+          rate: rates[curr] || 0,
+          change: (Math.random() - 0.5) * 0.5, // Simulated change for demo
+          timestamp: new Date(),
+        }));
+
+        setPrices(newPrices);
+        setError(null);
+      } catch (err) {
+        setError('Failed to load live prices');
+        console.error('Price fetch error:', err);
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchPrices();
+    const interval = setInterval(fetchPrices, 30000); // Update every 30 seconds
+
+    return () => clearInterval(interval);
+  }, [baseCurrency]);
+
+  return (
+    <div className="w-full max-w-2xl mx-auto p-6 bg-white rounded-xl shadow-xl hover:shadow-2xl transition-all duration-300">
+      <div className="flex justify-between items-center mb-8 flex-wrap gap-4">
+        <h2 className="text-2xl font-bold bg-gradient-to-r from-indigo-600 to-pink-600 bg-clip-text text-transparent animate-pulse">
+          📊 Live Exchange Rates
+        </h2>
+        <div className="flex gap-2 animate-fadeIn">
+          {['USD', 'EUR', 'GBP'].map((curr, index) => (
+            <button
+              key={curr}
+              onClick={() => setBaseCurrency(curr)}
+              className={`px-4 py-2 rounded-lg font-semibold transition-all duration-300 transform hover:scale-110 active:scale-95 ${
+                baseCurrency === curr
+                  ? 'bg-gradient-to-r from-indigo-500 to-pink-500 text-white shadow-lg scale-110'
+                  : 'bg-gray-200 text-gray-700 hover:bg-gray-300 shadow-md'
+              }`}
+              style={{ animationDelay: `${index * 100}ms` }}
+            >
+              {curr}
+            </button>
+          ))}
+        </div>
+      </div>
+
+      {loading && (
+        <div className="text-center py-12">
+          <div className="inline-block">
+            <div className="animate-spin rounded-full h-12 w-12 border-t-4 border-b-4 border-indigo-500 mx-auto mb-4"></div>
+            <p className="text-gray-500 font-semibold">Loading prices...</p>
+          </div>
+        </div>
+      )}
+
+      {error && (
+        <div className="p-4 bg-red-50 rounded-lg text-red-600 border-2 border-red-200 animate-shake">
+          {error}
+        </div>
+      )}
+
+      {!loading && !error && (
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+          {prices.map((price, index) => (
+            <div
+              key={price.currency}
+              className="p-5 border-2 border-gray-200 rounded-xl hover:shadow-xl hover:border-indigo-300 transition-all duration-300 transform hover:scale-105 bg-gradient-to-br from-white to-gray-50 animate-fadeIn"
+              style={{ animationDelay: `${index * 100}ms` }}
+            >
+              <div className="flex justify-between items-center">
+                <div>
+                  <p className="text-sm text-gray-600 font-medium">
+                    1 {baseCurrency} = {price.rate.toFixed(4)} {price.currency}
+                  </p>
+                  <p className="text-xs text-indigo-600 font-bold mt-2 animate-pulse">
+                    {price.currency}
+                  </p>
+                </div>
+                <div className="text-right">
+                  <p className="text-2xl font-bold bg-gradient-to-r from-indigo-600 to-pink-600 bg-clip-text text-transparent">
+                    {price.rate.toFixed(2)}
+                  </p>
+                  <p
+                    className={`text-sm font-bold mt-1 animate-bounce ${
+                      price.change >= 0
+                        ? 'text-green-600'
+                        : 'text-red-600'
+                    }`}
+                  >
+                    {price.change >= 0 ? '↑' : '↓'} {Math.abs(price.change).toFixed(2)}%
+                  </p>
+                </div>
+              </div>
+            </div>
+          ))}
+        </div>
+      )}
+
+      <div className="mt-8 p-4 bg-gradient-to-r from-indigo-50 to-pink-50 rounded-xl text-xs text-gray-600 border-2 border-indigo-100 animate-fadeIn">
+        <p className="font-medium">⚡ Updates every 30 seconds • Base currency: <span className="font-bold text-indigo-600">{baseCurrency}</span></p>
+      </div>
+    </div>
+  );
+}
